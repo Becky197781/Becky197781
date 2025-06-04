@@ -1,0 +1,150 @@
+document.addEventListener('DOMContentLoaded', () => {
+    const animationContainer = document.getElementById('animation-container');
+    const buttonSelection = document.getElementById('button-selection');
+
+    // --- Part 1: Sparkle Animation ---
+    function createSparkle() {
+        const sparkle = document.createElement('div');
+        sparkle.classList.add('sparkle');
+        animationContainer.appendChild(sparkle);
+
+        // Random starting position (off-screen)
+        const startX = Math.random() * window.innerWidth;
+        const startY = Math.random() * window.innerHeight;
+        sparkle.style.left = `${startX}px`;
+        sparkle.style.top = `${startY}px`;
+        sparkle.style.opacity = 1; // Make it visible
+
+        // Random target position (within screen)
+        const targetX = Math.random() * window.innerWidth;
+        const targetY = Math.random() * window.innerHeight;
+
+        // Random duration for the flight
+        const duration = 3 + Math.random() * 2; // 3 to 5 seconds
+
+        // Animate the sparkle's flight
+        sparkle.animate([
+            { transform: `translate(0, 0)` }, // Start at its initial position
+            { transform: `translate(${targetX - startX}px, ${targetY - startY}px)` } // Move to target relative to start
+        ], {
+            duration: duration * 1000, // Convert to milliseconds
+            easing: 'ease-in-out',
+            fill: 'forwards' // Keep the final state
+        }).onfinish = () => {
+            // When sparkle finishes flying, transform it into a paintbrush
+            transformSparkleToPaintbrush(sparkle, targetX, targetY);
+        };
+    }
+
+    // Call createSparkle to start the animation when the page loads
+    createSparkle();
+
+    // --- Part 2: Sparkle to Paintbrush Transformation (initial setup) ---
+    function transformSparkleToPaintbrush(sparkleElement, finalX, finalY) {
+        sparkleElement.style.transition = 'all 1s ease-in-out'; // Smooth transition for size/shape
+        sparkleElement.style.opacity = 0; // Fade out the sparkle
+        sparkleElement.style.width = '0px'; // Shrink sparkle
+        sparkleElement.style.height = '0px';
+
+        // Create the paintbrush element
+        const paintbrush = document.createElement('div');
+        paintbrush.classList.add('paintbrush');
+        animationContainer.appendChild(paintbrush);
+
+        // Position the paintbrush where the sparkle stopped
+        paintbrush.style.left = `${finalX}px`;
+        paintbrush.style.top = `${finalY}px`;
+
+        // Wait briefly for sparkle to fade, then animate paintbrush
+        setTimeout(() => {
+            paintbrush.style.opacity = 1;
+            // You'll need an actual paintbrush image or SVG for this.
+            // For now, let's make it a simple rectangle to represent it.
+            paintbrush.style.width = '50px'; // Example size
+            paintbrush.style.height = '150px'; // Example size
+            paintbrush.style.backgroundColor = 'brown'; // Example color for the handle
+            paintbrush.style.borderRadius = '5px 5px 20px 20px'; // Simple brush shape
+            paintbrush.style.boxShadow = '0 0 15px rgba(255, 255, 0, 0.7)'; // Slight glow
+
+            // After paintbrush appears, trigger the paint splat
+            setTimeout(() => {
+                paintSplat(finalX, finalY);
+                paintbrush.remove(); // Remove paintbrush after splat
+            }, 1000); // Wait 1 second after paintbrush appears
+        }, 800); // Wait 0.8 seconds for sparkle to fully disappear
+    }
+
+    // --- Part 3: Paint Splat and Drips (initial setup) ---
+    function paintSplat(centerX, centerY) {
+        const splat = document.createElement('div');
+        splat.classList.add('paint-splat');
+        animationContainer.appendChild(splat);
+
+        splat.style.left = `${centerX}px`;
+        splat.style.top = `${centerY}px`;
+
+        // Animate the splat expansion
+        splat.animate([
+            { width: '0px', height: '0px', opacity: 0, backgroundColor: 'transparent' },
+            { width: '200px', height: '200px', opacity: 1, backgroundColor: 'purple', offset: 0.5 }, // Example color
+            { backgroundColor: 'orange', offset: 0.6 },
+            { backgroundColor: 'red', offset: 0.7 },
+            { backgroundColor: 'blue', offset: 0.8 },
+            { backgroundColor: 'green', offset: 0.9 },
+            { backgroundColor: 'yellow', opacity: 1 } // Final splat color will blend
+        ], {
+            duration: 1000, // 1 second for splat
+            easing: 'ease-out',
+            fill: 'forwards'
+        }).onfinish = () => {
+            splat.style.backgroundColor = 'transparent'; // Make splat itself transparent for drips
+            createPaintDrips(centerX, centerY);
+        };
+    }
+
+    function createPaintDrips(centerX, centerY) {
+        const colors = ['#FF0000', '#FFA500', '#FFFF00', '#008000', '#0000FF', '#4B0082', '#EE82EE']; // Rainbow colors
+
+        for (let i = 0; i < 20; i++) { // Create multiple drips
+            const drip = document.createElement('div');
+            drip.classList.add('paint-drip');
+            animationContainer.appendChild(drip);
+
+            const randomOffset = (Math.random() - 0.5) * 150; // Drips spread out from center
+            drip.style.left = `${centerX + randomOffset}px`;
+            drip.style.top = `${centerY}px`; // Start from splat center
+            drip.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            drip.style.width = `${5 + Math.random() * 10}px`; // Vary drip width
+
+            const dripDuration = 1.5 + Math.random(); // 1.5 to 2.5 seconds
+            const dripLength = 200 + Math.random() * 100; // Vary drip length
+
+            drip.animate([
+                { height: '0px', opacity: 1, top: `${centerY}px` },
+                { height: `${dripLength}px`, opacity: 0.7, top: `${centerY + dripLength}px` },
+                { opacity: 0 }
+            ], {
+                duration: dripDuration * 1000,
+                easing: 'linear',
+                fill: 'forwards'
+            }).onfinish = () => {
+                drip.remove();
+                // Check if all drips have finished before showing buttons
+                if (animationContainer.querySelectorAll('.paint-drip').length === 0) {
+                    showButtons();
+                }
+            };
+        }
+    }
+
+    // --- Part 4: Fade to Buttons ---
+    function showButtons() {
+        // Remove animation container to ensure buttons are clearly visible
+        animationContainer.style.opacity = 0;
+        setTimeout(() => {
+            animationContainer.remove();
+            buttonSelection.style.display = 'flex'; // Make buttons visible
+            buttonSelection.style.opacity = 1; // Fade them in
+        }, 500); // Short delay to ensure animation container fades first
+    }
+});
